@@ -8,6 +8,8 @@ use std::env;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::from_path(".env.local").unwrap();
+    // 注意：VpnClient::new() 会自动探测并设置证书路径，无需手动配置
+    // 下面这行是为了避免某些系统上的 openssl 配置问题
     env::set_var("OPENSSL_CONF", "/dev/null");
 
     let protocol = get_anyconnect_protocol();

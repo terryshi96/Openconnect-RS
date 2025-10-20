@@ -473,6 +473,18 @@ impl Connectable for VpnClient {
     ///
     /// callbacks can be created using [events::EventHandlers]
     fn new(config: Config, callbacks: EventHandlers) -> OpenconnectResult<Arc<Self>> {
+        // 在初始化 SSL 前，先探测并配置证书路径
+        // 这样可以确保在不同环境（包括 GitHub Actions 打包的版本）都能找到正确的证书
+        openssl_probe::init_ssl_cert_env_vars();
+        
+        // 记录探测到的证书路径，方便调试
+        if let Ok(cert_file) = std::env::var("SSL_CERT_FILE") {
+            tracing::debug!("SSL_CERT_FILE set to: {}", cert_file);
+        }
+        if let Ok(cert_dir) = std::env::var("SSL_CERT_DIR") {
+            tracing::debug!("SSL_CERT_DIR set to: {}", cert_dir);
+        }
+        
         let useragent = std::ffi::CString::new("AnyConnect-compatible OpenConnect VPN Agent")
             .map_err(|_| OpenconnectError::OtherError("useragent is not valid".to_string()))?;
 
