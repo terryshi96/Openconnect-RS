@@ -162,6 +162,14 @@ impl VpnClient {
         }
     }
 
+    /// 启用系统信任的 CA 证书
+    /// 在 macOS 和 Windows 上，这会使用系统的证书存储来验证服务器证书
+    pub fn set_system_trust(&self, enable: bool) {
+        unsafe {
+            openconnect_set_system_trust(self.vpninfo, if enable { 1 } else { 0 });
+        }
+    }
+
     pub fn set_protocol(&self, protocol: &str) -> OpenconnectResult<()> {
         let protocol =
             CString::new(protocol).map_err(|_| OpenconnectError::SetProtocolError(libc::EIO))?;
@@ -509,6 +517,10 @@ impl Connectable for VpnClient {
         SIGNAL_HANDLE.update_client_singleton(Arc::downgrade(&instance));
         instance.set_loglevel(instance.config.loglevel);
         instance.set_setup_tun_handler();
+        
+        // 启用系统信任的 CA 证书，这样可以使用系统证书存储来验证服务器证书
+        // 在 macOS 上使用钥匙串，在 Windows 上使用证书存储
+        instance.set_system_trust(true);
 
         if let Some(proxy) = &instance.config.http_proxy {
             instance
